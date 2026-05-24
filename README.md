@@ -1,4 +1,4 @@
-# 🌍 CityScope
+ CityScope
 
 Aplicação web em Flask que mostra informações sobre países e cidades — bandeira, capital, população, moeda (com conversão para USD), idiomas, hora local, mapa e clima (atual, histórico ou previsão de 7 dias).
 
