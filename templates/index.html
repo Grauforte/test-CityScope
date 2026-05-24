@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CityScope - Explore the World</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <input type="checkbox" id="theme-toggle">
+    <label for="theme-toggle" class="theme-label">Dark Mode</label>
+
+    <div class="page">
+
+        <header>
+            <h1>CityScope</h1>
+            <p>Explore countries and cities around the world.</p>
+        </header>
+
+        <main>
+            <section class="search-section">
+                <form method="POST" action="/">
+                    <div class="form-row">
+                        <select name="search_type">
+                            <option value="country" {% if search_type == 'country' %}selected{% endif %}>Country</option>
+                            <option value="city"    {% if search_type == 'city'    %}selected{% endif %}>City</option>
+                        </select>
+
+                        <input type="text" name="search_term"
+                               placeholder="Type a country or city name..."
+                               value="{{ search_term or '' }}" required>
+                    </div>
+
+                    <div class="form-row">
+                        <label class="date-label">
+                            Weather date (YYYY-MM-DD):
+                            <input type="text" name="weather_date"
+                                   placeholder="xxxx-yy-zz"
+                                   value="{{ date_term or today }}"
+                                   required>
+                        </label>
+                        <button type="submit">Search</button>
+                    </div>
+                </form>
+
+                {% if error %}
+                    <p class="error">{{ error }}</p>
+                {% endif %}
+            </section>
+
+            {% if data %}
+            <section class="results-section">
+                <div class="results-header">
+                    <h2>{{ data.name }}</h2>
+                    {% if data.is_city %}
+                        <p class="subtitle">City in {{ data.country_name }}</p>
+                    {% else %}
+                        <p class="subtitle">{{ data.official_name }}</p>
+                    {% endif %}
+                </div>
+
+              
+                <div class="card">
+                    <h3>General Information</h3>
+                    <p>
+                        {% if data.flag_url %}
+                            <img src="{{ data.flag_url }}"
+                                 alt="Flag of {{ data.country_name }}"
+                                 style="max-height: 45px; margin-right: 10px;">
+                        {% endif %}
+                        {% if data.coat_url %}
+                            <img src="{{ data.coat_url }}"
+                                 alt="Coat of arms of {{ data.country_name }}"
+                                 style="max-height: 45px; margin-right: 10px;">
+                        {% endif %}
+                    </p>
+
+                    {% if data.is_city %}
+                        <p><strong>Country:</strong> {{ data.country_name }}</p>
+                    {% endif %}
+                    <p><strong>Region:</strong> {{ data.region }}{% if data.subregion %} ({{ data.subregion }}){% endif %}</p>
+                    <p><strong>Capital:</strong> {{ data.capital }}</p>
+                    <p><strong>Population:</strong> {{ data.population }}</p>
+                    <p><strong>Area:</strong> {{ data.area }} km<sup>2</sup></p>
+                    <p><strong>Currency:</strong> {{ data.currency }}</p>
+
+    
+                    {% if data.usd_value %}
+                        <p><strong>Approx. value:</strong> {{ data.usd_value }}</p>
+                    {% endif %}
+
+                    <p><strong>Local time:</strong> {{ data.local_time }}</p>
+
+                    
+                    <p>
+                        <strong>Quick links:</strong>
+                        <a href="https://en.wikipedia.org/wiki/{{ data.name }}"
+                           target="_blank" rel="noopener">Wikipedia</a>
+                        &nbsp;|&nbsp;
+                        <a href="https://www.google.com/maps/search/?api=1&query={{ data.lat }},{{ data.lon }}"
+                           target="_blank" rel="noopener">Google Maps</a>
+                    </p>
+
+                    <details>
+                        <summary>View more details</summary>
+                        <p><strong>Languages:</strong> {{ data.languages }}</p>
+                        <p><strong>Timezones:</strong> {{ data.timezones }}</p>
+                        <p><strong>Borders:</strong> {{ data.borders }}</p>
+                        <p><strong>Coordinates:</strong> {{ "%.2f"|format(data.lat) }}, {{ "%.2f"|format(data.lon) }}</p>
+                    </details>
+                </div>
+
+                <div class="card">
+                    <h3>Weather on {{ data.weather.date }}</h3>
+                    <p class="weather-type">
+                        {% if data.weather.type == 'current' %}Today
+                        {% elif data.weather.type == 'forecast' %}Forecast
+                        {% else %}Historical{% endif %}
+                        - {{ data.weather.description }}
+                    </p>
+                    <p><strong>High:</strong> {{ data.weather.temp_max }} &deg;C</p>
+                    <p><strong>Low:</strong> {{ data.weather.temp_min }} &deg;C</p>
+                    <p><strong>Max wind:</strong> {{ data.weather.wind }} km/h</p>
+                    <p><strong>Precipitation:</strong> {{ data.weather.precipitation }} mm</p>
+                </div>
+                <div class="card">
+                    <h3>7-Day Forecast</h3>
+                    <table class="forecast-table">
+                        <thead>
+                            <tr>
+                                <th>Day</th>
+                                <th>Date</th>
+                                <th>Condition</th>
+                                <th>High</th>
+                                <th>Low</th>
+                                <th>Rain</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for d in data.forecast %}
+                            <tr>
+                                <td>{{ d.day_name }}</td>
+                                <td>{{ d.day_date }}</td>
+                                <td>{{ d.description }}</td>
+                                <td>{{ d.temp_max }}&deg;</td>
+                                <td>{{ d.temp_min }}&deg;</td>
+                                <td>{{ d.precipitation }} mm</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card">
+                    <h3>Map</h3>
+                    <iframe width="100%" height="300" frameborder="0"
+                            src="https://www.openstreetmap.org/export/embed.html?bbox={{ data.lon - 2 }}%2C{{ data.lat - 2 }}%2C{{ data.lon + 2 }}%2C{{ data.lat + 2 }}&amp;layer=mapnik&amp;marker={{ data.lat }}%2C{{ data.lon }}">
+                    </iframe>
+                </div>
+
+            </section>
+            {% endif %}
+
+        </main>
+
+        <footer>
+            <p>Made by: AINA PASCUAL LÓPEZ
+& HENRIQUE PASSONI</p>
+        </footer>
+
+    </div>
+
+</body>
+</html>
